@@ -21,13 +21,6 @@ struct GPUBarApp: App {
                 MenuBarView(
                     monitor: monitor,
                     username: config.username,
-                    selectedTab: config.selectedTab,
-                    visibleTabs: config.visibleTabs,
-                    overviewSections: config.overviewSections,
-                    onSelectTab: { tab in
-                        config.selectedTab = tab
-                        config.save()
-                    },
                     onSettings: { openSettings() },
                     onRefresh: { Task { await monitor.fetch() } },
                     onDisconnect: { handleDisconnect() },
@@ -123,10 +116,6 @@ struct GPUBarApp: App {
             config.notifyOnFreeGPU = updatedConfig.notifyOnFreeGPU
             config.notifyThreshold = updatedConfig.notifyThreshold
             config.notifyClusterFilter = updatedConfig.notifyClusterFilter
-            config.visibleTabs = updatedConfig.visibleTabs
-            config.overviewSections = updatedConfig.overviewSections
-            config.selectedTab = updatedConfig.selectedTab
-            config.ensureValidSelection()
             config.save()
 
             monitor?.stopPolling()
@@ -191,7 +180,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         })
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 440, height: 620),
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 480),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
