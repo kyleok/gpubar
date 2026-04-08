@@ -9,6 +9,8 @@ struct SettingsView: View {
     @State var notifyOnFreeGPU: Bool
     @State var notifyThreshold: Int
     @State var notifyClusterFilter: String
+    @State var visibleTabs: Set<DashboardTab>
+    @State var overviewSections: Set<OverviewSection>
     let onSave: (AppConfig) -> Void
 
     init(config: AppConfig, onSave: @escaping (AppConfig) -> Void) {
@@ -19,13 +21,14 @@ struct SettingsView: View {
         _notifyOnFreeGPU = State(initialValue: config.notifyOnFreeGPU)
         _notifyThreshold = State(initialValue: config.notifyThreshold)
         _notifyClusterFilter = State(initialValue: config.notifyClusterFilter)
+        _visibleTabs = State(initialValue: Set(config.visibleTabs))
+        _overviewSections = State(initialValue: Set(config.overviewSections))
         self.onSave = onSave
     }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: true) {
             VStack(alignment: .leading, spacing: 16) {
-                // MARK: - General
                 SettingsSection {
                     SectionHeader("General")
                     PreferenceToggleRow(
@@ -57,7 +60,43 @@ struct SettingsView: View {
 
                 Divider()
 
-                // MARK: - Connection
+                SettingsSection {
+                    SectionHeader("Navigation")
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Visible tabs")
+                            .font(.body)
+                        Text("Choose which top tabs appear in the menu. If you hide everything, GPUBar keeps Overview visible.")
+                            .font(.footnote)
+                            .foregroundStyle(.tertiary)
+
+                        ForEach(DashboardTab.allCases) { tab in
+                            PreferenceToggleRow(
+                                title: tab.title,
+                                subtitle: tab == .overview ? "Combined snapshot across all tracked clusters." : "Dedicated view for \(tab.title) nodes.",
+                                isOn: binding(for: tab)
+                            )
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Overview contents")
+                            .font(.body)
+                        Text("Pick which sections appear inside the Overview tab.")
+                            .font(.footnote)
+                            .foregroundStyle(.tertiary)
+
+                        ForEach(OverviewSection.allCases) { section in
+                            PreferenceToggleRow(
+                                title: section.title,
+                                subtitle: section.subtitle,
+                                isOn: binding(for: section)
+                            )
+                        }
+                    }
+                }
+
+                Divider()
+
                 SettingsSection {
                     SectionHeader("Connection")
                     VStack(alignment: .leading, spacing: 8) {
@@ -79,7 +118,6 @@ struct SettingsView: View {
 
                 Divider()
 
-                // MARK: - Notifications
                 SettingsSection {
                     SectionHeader("Notifications")
                     PreferenceToggleRow(
@@ -118,7 +156,6 @@ struct SettingsView: View {
 
                 Divider()
 
-                // MARK: - About
                 SettingsSection {
                     SectionHeader("About")
                     HStack {
@@ -135,7 +172,7 @@ struct SettingsView: View {
             .padding(.horizontal, 24)
             .padding(.vertical, 16)
         }
-        .frame(width: 420, height: 480)
+        .frame(width: 440, height: 620)
         .onChange(of: apiURL) { _, _ in saveConfig() }
         .onChange(of: coreURL) { _, _ in saveConfig() }
         .onChange(of: refreshSeconds) { _, _ in saveConfig() }
@@ -143,6 +180,34 @@ struct SettingsView: View {
         .onChange(of: notifyOnFreeGPU) { _, _ in saveConfig() }
         .onChange(of: notifyThreshold) { _, _ in saveConfig() }
         .onChange(of: notifyClusterFilter) { _, _ in saveConfig() }
+        .onChange(of: visibleTabs) { _, _ in saveConfig() }
+        .onChange(of: overviewSections) { _, _ in saveConfig() }
+    }
+
+    private func binding(for tab: DashboardTab) -> Binding<Bool> {
+        Binding(
+            get: { visibleTabs.contains(tab) },
+            set: { isOn in
+                if isOn {
+                    visibleTabs.insert(tab)
+                } else {
+                    visibleTabs.remove(tab)
+                }
+            }
+        )
+    }
+
+    private func binding(for section: OverviewSection) -> Binding<Bool> {
+        Binding(
+            get: { overviewSections.contains(section) },
+            set: { isOn in
+                if isOn {
+                    overviewSections.insert(section)
+                } else {
+                    overviewSections.remove(section)
+                }
+            }
+        )
     }
 
     private func saveConfig() {
@@ -154,6 +219,9 @@ struct SettingsView: View {
         config.notifyOnFreeGPU = notifyOnFreeGPU
         config.notifyThreshold = notifyThreshold
         config.notifyClusterFilter = notifyClusterFilter
+        config.visibleTabs = DashboardTab.allCases.filter { visibleTabs.contains($0) }
+        config.overviewSections = OverviewSection.allCases.filter { overviewSections.contains($0) }
+        config.ensureValidSelection()
         onSave(config)
     }
 }
