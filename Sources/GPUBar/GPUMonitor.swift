@@ -103,13 +103,23 @@ final class GPUMonitor {
                 clusterMap[node.cluster, default: []].append(nodeData)
             }
 
+            let clusterOrder = AppConfig.orderedClusterOptions(available: Array(clusterMap.keys))
+            let clusterOrderIndex = Dictionary(uniqueKeysWithValues: clusterOrder.enumerated().map { ($0.element, $0.offset) })
+
             clusters = clusterMap.map { name, nodes in
                 ClusterData(
                     id: name,
-                    name: name.uppercased(),
+                    name: name,
                     nodes: nodes.sorted { $0.name < $1.name }
                 )
-            }.sorted { $0.id < $1.id }
+            }.sorted {
+                let lhsIndex = clusterOrderIndex[$0.id.lowercased()] ?? Int.max
+                let rhsIndex = clusterOrderIndex[$1.id.lowercased()] ?? Int.max
+                if lhsIndex == rhsIndex {
+                    return $0.id.localizedCaseInsensitiveCompare($1.id) == .orderedAscending
+                }
+                return lhsIndex < rhsIndex
+            }
 
             pendingJobs = decoded.pending
             topUsers = decoded.users

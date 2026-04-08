@@ -20,7 +20,7 @@ struct GPUBarApp: App {
             } else if let monitor = monitor {
                 MenuBarView(
                     monitor: monitor,
-                    username: config.username,
+                    config: config,
                     onSettings: { openSettings() },
                     onRefresh: { Task { await monitor.fetch() } },
                     onDisconnect: { handleDisconnect() },
@@ -108,7 +108,9 @@ struct GPUBarApp: App {
     }
 
     private func openSettings() {
-        appDelegate.showSettings(config: config) { updatedConfig in
+        appDelegate.showSettings(
+            config: config,
+            availableClusters: monitor?.clusters.map(\.id) ?? AppConfig.preferredClusterOrder) { updatedConfig in
             config.apiURL = updatedConfig.apiURL
             config.coreURL = updatedConfig.coreURL
             config.refreshInterval = updatedConfig.refreshInterval
@@ -116,6 +118,10 @@ struct GPUBarApp: App {
             config.notifyOnFreeGPU = updatedConfig.notifyOnFreeGPU
             config.notifyThreshold = updatedConfig.notifyThreshold
             config.notifyClusterFilter = updatedConfig.notifyClusterFilter
+            config.switcherShowsIcons = updatedConfig.switcherShowsIcons
+            config.showOverviewTab = updatedConfig.showOverviewTab
+            config.visibleClusterTabs = updatedConfig.visibleClusterTabs
+            config.overviewSelectedClusters = updatedConfig.overviewSelectedClusters
             config.save()
 
             monitor?.stopPolling()
@@ -168,19 +174,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    func showSettings(config: AppConfig, onSave: @escaping (AppConfig) -> Void) {
+    func showSettings(config: AppConfig, availableClusters: [String], onSave: @escaping (AppConfig) -> Void) {
         if let existing = settingsWindow, existing.isVisible {
             existing.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
         }
 
-        let settingsView = SettingsView(config: config, onSave: { updated in
+        let settingsView = SettingsView(config: config, availableClusters: availableClusters, onSave: { updated in
             onSave(updated)
         })
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 420, height: 480),
+            contentRect: NSRect(x: 0, y: 0, width: 520, height: 560),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
