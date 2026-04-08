@@ -2,8 +2,8 @@ import AppKit
 import SwiftUI
 
 struct MenuBarView: View {
-    private static let menuWidth: CGFloat = 440
-    private static let switcherWidth: CGFloat = 408
+    private static let menuWidth: CGFloat = 400
+    private static let switcherWidth: CGFloat = 368
 
     let monitor: GPUMonitor
     let config: AppConfig
@@ -193,7 +193,7 @@ struct MenuBarView: View {
             if !self.overviewClusters.isEmpty {
                 Divider().padding(.horizontal, 16)
                 ForEach(Array(self.overviewClusters.enumerated()), id: \.element.id) { index, cluster in
-                    OverviewClusterCardRowView(cluster: cluster, tint: self.color(for: cluster.id))
+                    OverviewClusterSectionView(cluster: cluster, tint: self.color(for: cluster.id))
                     if index < self.overviewClusters.count - 1 {
                         Divider().padding(.horizontal, 16)
                     }
@@ -405,45 +405,108 @@ private struct GPUMetricRow: View {
     }
 }
 
-private struct OverviewClusterCardRowView: View {
+private struct OverviewClusterSectionView: View {
     let cluster: ClusterData
     let tint: Color
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline) {
+            HStack(alignment: .center, spacing: 8) {
                 Text(AppConfig.displayName(for: self.cluster.id))
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                Spacer(minLength: 8)
-                Text(self.cluster.nodes.first?.gpuType ?? "GPU")
-                    .font(.subheadline)
+                    .font(.system(.caption, design: .monospaced).weight(.bold))
+                    .frame(width: 86, alignment: .leading)
+
+                UsageProgressBar(
+                    percent: self.percentUsed,
+                    tint: self.barTint,
+                    accessibilityLabel: "\(self.cluster.id) usage")
+                    .frame(height: 8)
+
+                Text("\(self.cluster.freeGPUs)/\(self.cluster.totalGPUs)")
+                    .font(.system(.caption2, design: .monospaced))
                     .foregroundStyle(.secondary)
+                    .frame(width: 42, alignment: .trailing)
             }
 
-            GPUMetricRow(
-                summary: MenuMetricSummary(
-                    title: "Availability",
-                    percent: self.percentFree,
-                    primaryText: "\(self.cluster.freeGPUs) free of \(self.cluster.totalGPUs)",
-                    secondaryText: "\(self.cluster.nodes.count) nodes"),
-                tint: self.tint)
-
-            if let usersSummaryLine = self.cluster.usersSummaryLine {
-                Text(usersSummaryLine)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 3) {
+                ForEach(self.cluster.nodes) { node in
+                    OverviewNodeRowView(node: node)
+                }
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.vertical, 8)
     }
 
-    private var percentFree: Double {
+    private var percentUsed: Double {
         guard self.cluster.totalGPUs > 0 else { return 0 }
-        return (Double(self.cluster.freeGPUs) / Double(self.cluster.totalGPUs)) * 100
+        return (Double(self.cluster.usedGPUs) / Double(self.cluster.totalGPUs)) * 100
+    }
+
+    private var barTint: Color {
+        if self.percentUsed >= 90 {
+            return Color(nsColor: .systemRed)
+        }
+        if self.percentUsed >= 70 {
+            return Color(nsColor: .systemOrange)
+        }
+        return self.tint
+    }
+}
+
+private struct OverviewNodeRowView: View {
+    let node: NodeData
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(self.node.name)
+                .font(.system(.caption2, design: .monospaced))
+                .foregroundStyle(.secondary)
+                .frame(width: 58, alignment: .leading)
+                .lineLimit(1)
+
+            UsageProgressBar(
+                percent: self.percentUsed,
+                tint: self.tint,
+                accessibilityLabel: "\(self.node.name) usage")
+                .frame(width: 52, height: 6)
+
+            Text("\(self.node.gpuFree)/\(self.node.gpuTotal)")
+                .font(.system(.caption2, design: .monospaced))
+                .frame(width: 35, alignment: .trailing)
+
+            Text(self.node.gpuType)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .layoutPriority(1)
+
+            if !self.node.userSummary.isEmpty {
+                Spacer(minLength: 6)
+                Text(self.node.userSummary)
+                    .font(.system(.caption2, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .multilineTextAlignment(.trailing)
+            }
+        }
+        .padding(.leading, 12)
+    }
+
+    private var percentUsed: Double {
+        guard self.node.gpuTotal > 0 else { return 0 }
+        return (Double(self.node.gpuUsed) / Double(self.node.gpuTotal)) * 100
+    }
+
+    private var tint: Color {
+        if self.percentUsed >= 90 {
+            return Color(nsColor: .systemRed)
+        }
+        if self.percentUsed >= 70 {
+            return Color(nsColor: .systemOrange)
+        }
+        return Color(nsColor: .systemGreen)
     }
 }
 
