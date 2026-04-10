@@ -1,6 +1,6 @@
 #define AppName "GPUBar"
 #ifndef AppVersion
-  #define AppVersion "1.1.2"
+  #define AppVersion "1.1.3"
 #endif
 #ifndef SourceDir
   #error SourceDir must be provided to Inno Setup.
@@ -19,7 +19,6 @@ SolidCompression=yes
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputBaseFilename=GPUBar-Setup-{#AppVersion}
-SetupIconFile={#SourceDir}\GPUBar.Windows.exe
 UninstallDisplayIcon={app}\GPUBar.Windows.exe
 WizardStyle=modern
 PrivilegesRequired=lowest

@@ -70,6 +70,12 @@ jobs:
         run: |
           Compress-Archive -Path .\windows\dist\publish\* -DestinationPath .\GPUBar-${{ steps.version.outputs.version }}-windows-x64.zip
 
+      - name: Upload Windows portable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gpubar-windows-portable
+          path: GPUBar-${{ steps.version.outputs.version }}-windows-x64.zip
+
       - name: Install Inno Setup
         shell: pwsh
         run: choco install innosetup --no-progress -y
@@ -78,12 +84,6 @@ jobs:
         shell: pwsh
         run: |
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DAppVersion=${{ steps.version.outputs.version }}" "/DSourceDir=${{ github.workspace }}\windows\dist\publish" ".\windows\installer\GPUBar.iss"
-
-      - name: Upload Windows portable artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: gpubar-windows-portable
-          path: GPUBar-${{ steps.version.outputs.version }}-windows-x64.zip
 
       - name: Upload Windows installer artifact
         uses: actions/upload-artifact@v4
