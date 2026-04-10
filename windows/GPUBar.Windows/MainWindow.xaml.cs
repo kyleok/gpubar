@@ -15,7 +15,7 @@ public partial class MainWindow : Window
 
     protected override void OnClosing(CancelEventArgs e)
     {
-        if (((App)Application.Current).IsExiting)
+        if (((App)System.Windows.Application.Current).IsExiting)
         {
             base.OnClosing(e);
             return;
@@ -27,7 +27,7 @@ public partial class MainWindow : Window
 
     private async void RefreshButton_OnClick(object sender, RoutedEventArgs e)
     {
-        await ((App)Application.Current).RefreshNowAsync();
+        await ((App)System.Windows.Application.Current).RefreshNowAsync();
     }
 
     private void HideButton_OnClick(object sender, RoutedEventArgs e)
@@ -37,17 +37,17 @@ public partial class MainWindow : Window
 
     private async void SaveSettingsButton_OnClick(object sender, RoutedEventArgs e)
     {
-        await ((App)Application.Current).SaveSettingsAsync();
+        await ((App)System.Windows.Application.Current).SaveSettingsAsync();
     }
 
     private void RegisterDeepLinkButton_OnClick(object sender, RoutedEventArgs e)
     {
-        ((App)Application.Current).RegisterDeepLinkHandler();
-        MessageBox.Show(this, "GPUBar registered the gpubar:// protocol for this Windows account.", "GPUBar", MessageBoxButton.OK, MessageBoxImage.Information);
+        ((App)System.Windows.Application.Current).RegisterDeepLinkHandler();
+        System.Windows.MessageBox.Show(this, "GPUBar registered the gpubar:// protocol for this Windows account.", "GPUBar", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private async void DisconnectButton_OnClick(object sender, RoutedEventArgs e)
     {
-        await ((App)Application.Current).DisconnectAsync();
+        await ((App)System.Windows.Application.Current).DisconnectAsync();
     }
 }

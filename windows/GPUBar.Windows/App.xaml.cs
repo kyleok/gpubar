@@ -1,4 +1,4 @@
-using System.Reflection;
+using System.IO;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -225,6 +225,13 @@ public partial class App : System.Windows.Application
 
     private static string GetExecutablePath()
     {
-        return Assembly.GetEntryAssembly()?.Location ?? Environment.ProcessPath ?? "GPUBar.Windows.exe";
+        var processPath = Environment.ProcessPath;
+        if (!string.IsNullOrWhiteSpace(processPath))
+        {
+            return processPath;
+        }
+
+        var baseDirectory = AppContext.BaseDirectory;
+        return Path.Combine(baseDirectory, "GPUBar.Windows.exe");
     }
 }
