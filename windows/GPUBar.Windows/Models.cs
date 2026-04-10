@@ -6,7 +6,7 @@ namespace GPUBar.Windows;
 public sealed class GpuStatusResponse
 {
     [JsonPropertyName("summary")]
-    public Summary Summary { get; set; } = new();
+    public SummaryData Summary { get; set; } = new();
 
     [JsonPropertyName("users")]
     public List<UserUsage> Users { get; set; } = [];
@@ -17,7 +17,7 @@ public sealed class GpuStatusResponse
     [JsonPropertyName("pending")]
     public List<PendingJob> Pending { get; set; } = [];
 
-    public sealed class Summary
+    public sealed class SummaryData
     {
         [JsonPropertyName("total")]
         public int Total { get; set; }

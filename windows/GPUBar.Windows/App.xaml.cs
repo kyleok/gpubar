@@ -4,7 +4,7 @@ using System.Windows.Threading;
 
 namespace GPUBar.Windows;
 
-public partial class App : Application
+public partial class App : System.Windows.Application
 {
     private readonly SettingsStore _settingsStore = new();
     private readonly GpuStatusClient _client = new();
