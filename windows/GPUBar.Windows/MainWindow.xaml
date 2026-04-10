@@ -1,0 +1,296 @@
+<Window x:Class="GPUBar.Windows.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="GPUBar"
+        Width="1080"
+        Height="760"
+        MinWidth="900"
+        MinHeight="620">
+  <DockPanel Background="#FFF7F7F7">
+    <Border DockPanel.Dock="Top"
+            Background="#FF111827"
+            Padding="20">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <StackPanel>
+          <TextBlock Text="GPUBar"
+                     Foreground="White"
+                     FontSize="24"
+                     FontWeight="SemiBold" />
+          <TextBlock Text="{Binding StatusMessage}"
+                     Margin="0,6,0,0"
+                     Foreground="#FFD1D5DB"
+                     FontSize="13" />
+          <TextBlock Text="{Binding LastUpdateText}"
+                     Margin="0,4,0,0"
+                     Foreground="#FF9CA3AF"
+                     FontSize="12" />
+          <TextBlock Text="{Binding ErrorMessage}"
+                     Margin="0,8,0,0"
+                     Foreground="#FFFCA5A5"
+                     FontSize="12"
+                     TextWrapping="Wrap" />
+        </StackPanel>
+
+        <Border Grid.Column="1"
+                Margin="16,0,0,0"
+                Padding="16,10"
+                CornerRadius="12"
+                Background="#FF1F2937">
+          <StackPanel>
+            <TextBlock Text="Free GPUs"
+                       Foreground="#FF9CA3AF"
+                       FontSize="12" />
+            <TextBlock Text="{Binding TotalFree}"
+                       Foreground="White"
+                       FontSize="28"
+                       FontWeight="Bold" />
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Column="2"
+                Margin="12,0,0,0"
+                Padding="16,10"
+                CornerRadius="12"
+                Background="#FF1F2937">
+          <StackPanel>
+            <TextBlock Text="Total GPUs"
+                       Foreground="#FF9CA3AF"
+                       FontSize="12" />
+            <TextBlock Text="{Binding TotalGpus}"
+                       Foreground="White"
+                       FontSize="28"
+                       FontWeight="Bold" />
+          </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Column="3"
+                    Margin="12,0,0,0"
+                    VerticalAlignment="Center">
+          <Button Content="Refresh now"
+                  Width="120"
+                  Height="34"
+                  Margin="0,0,0,8"
+                  Click="RefreshButton_OnClick" />
+          <Button Content="Hide to tray"
+                  Width="120"
+                  Height="34"
+                  Click="HideButton_OnClick" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <TabControl Margin="12">
+      <TabItem Header="Overview">
+        <Grid Margin="8">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+
+          <TextBlock Text="Live cluster availability and queue state"
+                     FontSize="14"
+                     FontWeight="SemiBold"
+                     Margin="0,0,0,12" />
+
+          <GroupBox Grid.Row="1"
+                    Header="Clusters"
+                    Margin="0,0,0,10">
+            <DataGrid ItemsSource="{Binding Clusters}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      CanUserAddRows="False"
+                      Margin="8"
+                      HeadersVisibility="Column"
+                      RowHeaderWidth="0">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Cluster" Binding="{Binding DisplayName}" Width="120" />
+                <DataGridTextColumn Header="Free" Binding="{Binding FreeGpus}" Width="80" />
+                <DataGridTextColumn Header="Used" Binding="{Binding UsedGpus}" Width="80" />
+                <DataGridTextColumn Header="Total" Binding="{Binding TotalGpus}" Width="80" />
+                <DataGridTextColumn Header="GPU Type" Binding="{Binding GpuType}" Width="160" />
+                <DataGridTextColumn Header="Users" Binding="{Binding UserSummary}" Width="*" />
+              </DataGrid.Columns>
+            </DataGrid>
+          </GroupBox>
+
+          <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <GroupBox Header="Pending Jobs" Margin="0,0,6,0">
+              <DataGrid ItemsSource="{Binding PendingJobs}"
+                        AutoGenerateColumns="False"
+                        IsReadOnly="True"
+                        CanUserAddRows="False"
+                        Margin="8"
+                        RowHeaderWidth="0">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="User" Binding="{Binding User}" Width="120" />
+                  <DataGridTextColumn Header="GPUs" Binding="{Binding Gpus}" Width="60" />
+                  <DataGridTextColumn Header="Scope" Binding="{Binding Scope}" Width="*" />
+                  <DataGridTextColumn Header="Pos" Binding="{Binding Position}" Width="60" />
+                </DataGrid.Columns>
+              </DataGrid>
+            </GroupBox>
+
+            <GroupBox Grid.Column="1" Header="Top Users" Margin="6,0,0,0">
+              <DataGrid ItemsSource="{Binding TopUsers}"
+                        AutoGenerateColumns="False"
+                        IsReadOnly="True"
+                        CanUserAddRows="False"
+                        Margin="8"
+                        RowHeaderWidth="0">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="User" Binding="{Binding Name}" Width="160" />
+                  <DataGridTextColumn Header="Total GPUs" Binding="{Binding Total}" Width="90" />
+                  <DataGridTextColumn Header="Clusters" Binding="{Binding ClusterSummary}" Width="*" />
+                </DataGrid.Columns>
+              </DataGrid>
+            </GroupBox>
+          </Grid>
+        </Grid>
+      </TabItem>
+
+      <TabItem Header="Cluster Details">
+        <Grid Margin="8">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+
+          <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+            <TextBlock Text="Cluster"
+                       VerticalAlignment="Center"
+                       FontWeight="SemiBold" />
+            <ComboBox Width="220"
+                      Margin="12,0,0,0"
+                      ItemsSource="{Binding Clusters}"
+                      SelectedItem="{Binding SelectedCluster}"
+                      DisplayMemberPath="DisplayName" />
+            <TextBlock Margin="16,0,0,0"
+                       VerticalAlignment="Center"
+                       Text="{Binding SelectedCluster.AvailabilityText}" />
+          </StackPanel>
+
+          <GroupBox Grid.Row="1"
+                    Header="Nodes"
+                    Margin="0,0,0,10">
+            <DataGrid ItemsSource="{Binding SelectedCluster.Nodes}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      CanUserAddRows="False"
+                      Margin="8"
+                      RowHeaderWidth="0">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Node" Binding="{Binding Name}" Width="140" />
+                <DataGridTextColumn Header="GPU Type" Binding="{Binding GpuType}" Width="160" />
+                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100" />
+                <DataGridTextColumn Header="Free" Binding="{Binding Free}" Width="70" />
+                <DataGridTextColumn Header="Used" Binding="{Binding Used}" Width="70" />
+                <DataGridTextColumn Header="Total" Binding="{Binding Total}" Width="70" />
+                <DataGridTextColumn Header="Users" Binding="{Binding Users}" Width="*" />
+              </DataGrid.Columns>
+            </DataGrid>
+          </GroupBox>
+
+          <TextBlock Grid.Row="2"
+                     Text="Pending jobs for the selected cluster"
+                     FontWeight="SemiBold"
+                     Margin="0,0,0,8" />
+
+          <GroupBox Grid.Row="3" Header="Cluster Pending Jobs">
+            <DataGrid ItemsSource="{Binding SelectedCluster.PendingJobs}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      CanUserAddRows="False"
+                      Margin="8"
+                      RowHeaderWidth="0">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="User" Binding="{Binding User}" Width="160" />
+                <DataGridTextColumn Header="GPUs" Binding="{Binding Gpus}" Width="70" />
+                <DataGridTextColumn Header="Partition" Binding="{Binding Partition}" Width="120" />
+                <DataGridTextColumn Header="Job" Binding="{Binding JobName}" Width="*" />
+                <DataGridTextColumn Header="Pos" Binding="{Binding Position}" Width="70" />
+              </DataGrid.Columns>
+            </DataGrid>
+          </GroupBox>
+        </Grid>
+      </TabItem>
+
+      <TabItem Header="Settings">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="20" MaxWidth="640">
+            <TextBlock Text="Connection"
+                       FontSize="16"
+                       FontWeight="SemiBold" />
+            <TextBlock Text="These values can be filled automatically when you open the dashboard deep link."
+                       Margin="0,4,0,16"
+                       Foreground="#FF6B7280"
+                       TextWrapping="Wrap" />
+
+            <TextBlock Text="Dashboard URL" />
+            <TextBox Margin="0,6,0,12" Text="{Binding Settings.ApiUrl, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Text="Auth/Core URL" />
+            <TextBox Margin="0,6,0,12" Text="{Binding Settings.CoreUrl, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Text="API Key" />
+            <TextBox Margin="0,6,0,12" Text="{Binding Settings.ApiKey, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Text="Username" />
+            <TextBox Margin="0,6,0,20" Text="{Binding Settings.Username, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Text="Refresh interval (seconds)" />
+            <TextBox Margin="0,6,0,12" Text="{Binding Settings.RefreshIntervalSeconds, UpdateSourceTrigger=LostFocus}" />
+
+            <CheckBox Content="Start GPUBar when I log into Windows"
+                      Margin="0,4,0,10"
+                      IsChecked="{Binding Settings.LaunchAtLogin}" />
+
+            <CheckBox Content="Notify me when GPUs become available"
+                      Margin="0,0,0,10"
+                      IsChecked="{Binding Settings.NotifyOnFreeGpu}" />
+
+            <TextBlock Text="Notification threshold" />
+            <TextBox Margin="0,6,0,12" Text="{Binding Settings.NotifyThreshold, UpdateSourceTrigger=LostFocus}" />
+
+            <TextBlock Text="Notification cluster filter (optional)" />
+            <TextBox Margin="0,6,0,20" Text="{Binding Settings.NotifyClusterFilter, UpdateSourceTrigger=PropertyChanged}" />
+
+            <WrapPanel>
+              <Button Content="Save settings"
+                      Width="130"
+                      Height="34"
+                      Margin="0,0,10,0"
+                      Click="SaveSettingsButton_OnClick" />
+              <Button Content="Register deep link"
+                      Width="140"
+                      Height="34"
+                      Margin="0,0,10,0"
+                      Click="RegisterDeepLinkButton_OnClick" />
+              <Button Content="Disconnect"
+                      Width="110"
+                      Height="34"
+                      Click="DisconnectButton_OnClick" />
+            </WrapPanel>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</Window>

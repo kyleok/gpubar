@@ -5,3 +5,7 @@ DerivedData/
 .DS_Store
 GPUBar.app/
 *.zip
+.omx/
+windows/**/bin/
+windows/**/obj/
+windows/dist/

@@ -8,28 +8,118 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  build-macos:
     runs-on: macos-14
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Extract version from tag
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
-      - name: Build release
-        run: swift build -c release
-
-      - name: Package app bundle
+      - name: Build macOS release
         run: |
           chmod +x Scripts/package_app.sh
           ./Scripts/package_app.sh
 
-      - name: Create zip
-        run: ditto -c -k --keepParent GPUBar.app "GPUBar-${{ steps.version.outputs.VERSION }}.zip"
+      - name: Create macOS zip
+        run: |
+          ditto -c -k --keepParent GPUBar.app "GPUBar-${{ steps.version.outputs.version }}-macos.zip"
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gpubar-macos
+          path: GPUBar-${{ steps.version.outputs.version }}-macos.zip
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        shell: pwsh
+        run: |
+          $version = "${env:GITHUB_REF_NAME}".Substring(1)
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Publish Windows app
+        shell: pwsh
+        run: |
+          dotnet publish .\windows\GPUBar.Windows\GPUBar.Windows.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            /p:PublishSingleFile=true `
+            /p:IncludeNativeLibrariesForSelfExtract=true `
+            /p:Version=${{ steps.version.outputs.version }} `
+            /p:FileVersion=${{ steps.version.outputs.version }}.0 `
+            /p:AssemblyVersion=${{ steps.version.outputs.version }}.0 `
+            -o .\windows\dist\publish
+
+      - name: Create Windows portable zip
+        shell: pwsh
+        run: |
+          Compress-Archive -Path .\windows\dist\publish\* -DestinationPath .\GPUBar-${{ steps.version.outputs.version }}-windows-x64.zip
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+
+      - name: Build Windows installer
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DAppVersion=${{ steps.version.outputs.version }}" "/DSourceDir=${{ github.workspace }}\windows\dist\publish" ".\windows\installer\GPUBar.iss"
+
+      - name: Upload Windows portable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gpubar-windows-portable
+          path: GPUBar-${{ steps.version.outputs.version }}-windows-x64.zip
+
+      - name: Upload Windows installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gpubar-windows-installer
+          path: windows/installer/Output/GPUBar-Setup-${{ steps.version.outputs.version }}.exe
+
+  release:
+    runs-on: ubuntu-latest
+    needs:
+      - build-macos
+      - build-windows
+    steps:
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: gpubar-macos
+          path: release-assets/macos
+
+      - name: Download Windows portable artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: gpubar-windows-portable
+          path: release-assets/windows-portable
+
+      - name: Download Windows installer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: gpubar-windows-installer
+          path: release-assets/windows-installer
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: "GPUBar-${{ steps.version.outputs.VERSION }}.zip"
+          files: |
+            release-assets/macos/GPUBar-${{ needs.build-macos.outputs.version }}-macos.zip
+            release-assets/windows-portable/GPUBar-${{ needs.build-macos.outputs.version }}-windows-x64.zip
+            release-assets/windows-installer/GPUBar-Setup-${{ needs.build-macos.outputs.version }}.exe
           generate_release_notes: true
